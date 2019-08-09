@@ -22,21 +22,10 @@ class ToptalReader
             }
 
             $cellIterator = $row->getCellIterator();
-            $cellIterator->seek('B');
-            $date = Date::excelToDateTimeObject($cellIterator->current()->getValue());
             $cellIterator->seek('C');
-            $transactionType = $cellIterator->current()->getFormattedValue();
-            if (!in_array($transactionType, ['WL', 'WD', 'FX'], true)) {
-                // Ignore these transaction types.
-                continue;
-            }
-            $cellIterator->seek('E');
-            $currency = $cellIterator->current()->getFormattedValue();
-            if ($currency !== 'USD') {
-                continue;
-            }
-            $cellIterator->seek('K');
             $rowAmount = (float) (string) $cellIterator->current()->getValue();
+            $cellIterator->seek('D');
+            $date = Date::excelToDateTimeObject($cellIterator->current()->getValue());
 
             $transactions[] = new Transaction($rowAmount, $date);
         }
