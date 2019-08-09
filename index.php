@@ -32,7 +32,11 @@ while ($line = fgets($f)) {
     }
     $row = str_getcsv(mb_convert_encoding($line, 'utf-8', 'utf-16'), ';', '"');
 
-    $amount += (float) str_replace(',', '.', $row[2]);
+    $rowAmount = (float) str_replace(',', '.', $row[2]);
+    if (!$rowAmount) {
+        throw new RuntimeException('Row amount is 0');
+    }
+    $amount += $rowAmount;
 }
 
 echo number_format($amount, 2) . "\n";
