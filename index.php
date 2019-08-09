@@ -58,8 +58,11 @@ $totalAmountByEndOfMonth = 0.0;
 foreach ($amountsPerMonth as $dateKey => $amount) {
     $totalAmountByEndOfMonth += $amount;
     printf(
-        "%s: %s\n",
+        "%s: %s (%s %+9s %s)\n",
         CarbonImmutable::createFromFormat('Y-m', $dateKey)->format('Y M'),
-        CurrencyFormatter::format($totalAmountByEndOfMonth, $currency)
+        CurrencyFormatter::format($totalAmountByEndOfMonth, $currency),
+        ($amount < 0 ? '-' : '+'),
+        number_format(abs($amount), 2),
+        $currency
     );
 }
