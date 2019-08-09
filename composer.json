@@ -1,0 +1,22 @@
+{
+    "name": "amcsi/bank-statement-merger",
+    "description": "Personal project for merging my different bank accounts' statements together",
+    "type": "project",
+    "require": {
+        "phpoffice/phpspreadsheet": "^1.8"
+    },
+    "require-dev": {
+        "roave/security-advisories": "dev-master"
+    },
+    "authors": [
+        {
+            "name": "Attila Szeremi",
+            "email": "attila@szeremi.org"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "amcsi\\BankStatementMerger\\": "src"
+        }
+    }
+}
