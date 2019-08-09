@@ -3,7 +3,10 @@
     "description": "Personal project for merging my different bank accounts' statements together",
     "type": "project",
     "require": {
-        "phpoffice/phpspreadsheet": "^1.8"
+        "phpoffice/phpspreadsheet": "^1.8",
+        "league/csv": "9.*",
+        "ext-mbstring": "*",
+        "vlucas/phpdotenv": "~3.4"
     },
     "require-dev": {
         "roave/security-advisories": "dev-master"
