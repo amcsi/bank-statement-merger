@@ -25,4 +25,9 @@ class Transaction
     {
         return $this->currency;
     }
+
+    public function getDateTime(): \DateTimeInterface
+    {
+        return $this->dateTime;
+    }
 }

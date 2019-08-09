@@ -4,7 +4,9 @@ declare(strict_types=1);
 use amcsi\BankStatementMerger\Readers\MobillsAppReader;
 use amcsi\BankStatementMerger\Readers\ToptalReader;
 use amcsi\BankStatementMerger\Transaction\CurrencyConverter;
-use amcsi\BankStatementMerger\Transaction\TransactionTotalCalculator;
+use amcsi\BankStatementMerger\Transaction\CurrencyFormatter;
+use amcsi\BankStatementMerger\Transaction\TransactionStatisticsCalculator;
+use Carbon\CarbonImmutable;
 
 require_once __DIR__ . '/vendor/autoload.php';
 
@@ -41,7 +43,23 @@ $toptalTransactionHistory = (new ToptalReader())->buildTransactionHistory("$dir/
 
 $transactionHistory->appendTransactionHistory($toptalTransactionHistory);
 
-$currencyConverter = new CurrencyConverter('GBP');
-$transactionTotalCalculator = new TransactionTotalCalculator($currencyConverter);
+$currency = 'GBP';
+$currencyConverter = new CurrencyConverter($currency);
+$transactionTotalCalculator = new TransactionStatisticsCalculator($currencyConverter);
 
-echo number_format($transactionTotalCalculator->calculateTotalAmount($transactionHistory), 2) . "\n";
+$amountsPerMonth = $transactionTotalCalculator->calculateAmountsPerMonth($transactionHistory);
+
+echo CurrencyFormatter::format(
+        $transactionTotalCalculator->calculateTotalAmount($transactionHistory),
+        $currency
+    ) . "\n";
+
+$totalAmountByEndOfMonth = 0.0;
+foreach ($amountsPerMonth as $dateKey => $amount) {
+    $totalAmountByEndOfMonth += $amount;
+    printf(
+        "%s: %s\n",
+        CarbonImmutable::createFromFormat('Y-m', $dateKey)->format('Y M'),
+        CurrencyFormatter::format($totalAmountByEndOfMonth, $currency)
+    );
+}

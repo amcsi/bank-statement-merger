@@ -17,6 +17,11 @@ class CurrencyConverter
         $this->currency = $currency;
     }
 
+    public function getCurrency(): string
+    {
+        return $this->currency;
+    }
+
     /**
      * Converts the given amount-currency to the amount of currency provided in the constructor.
      * @param float $amount

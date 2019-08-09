@@ -9,11 +9,11 @@ class TransactionHistory
 
     /**
      * TransactionHistory constructor.
-     * @param Transaction[] $transactions
+     * @param Transaction[]|array $transactions
      */
-    public function __construct($transactions)
+    public function __construct(array $transactions)
     {
-        $this->transactions = $transactions;
+        $this->transactions = self::sortTransactions($transactions);
     }
 
     public function getTransactions()
@@ -26,5 +26,17 @@ class TransactionHistory
         foreach ($transactionHistory->getTransactions() as $transaction) {
             $this->transactions[] = $transaction;
         }
+        $this->transactions = self::sortTransactions($this->transactions);
+    }
+
+    private static function sortTransactions(array $transactions)
+    {
+        usort(
+            $transactions,
+            function (Transaction $transaction1, Transaction $transaction2) {
+                return $transaction1->getDateTime() <=> $transaction2->getDateTime();
+            }
+        );
+        return $transactions;
     }
 }
