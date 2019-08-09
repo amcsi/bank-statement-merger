@@ -27,7 +27,7 @@ class ToptalReader
             $cellIterator->seek('D');
             $date = Date::excelToDateTimeObject($cellIterator->current()->getValue());
 
-            $transactions[] = new Transaction($rowAmount, $date);
+            $transactions[] = new Transaction($rowAmount, 'USD', $date);
         }
 
         return new TransactionHistory($transactions);

@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 use amcsi\BankStatementMerger\Readers\MobillsAppReader;
 use amcsi\BankStatementMerger\Readers\ToptalReader;
+use amcsi\BankStatementMerger\Transaction\CurrencyConverter;
+use amcsi\BankStatementMerger\Transaction\TransactionTotalCalculator;
 
 require_once __DIR__ . '/vendor/autoload.php';
 
@@ -28,7 +30,7 @@ if (!$csvFile) {
     exit(1);
 }
 
-$mobillsAppTransactionHistory = (new MobillsAppReader())->buildTransactionHistory("$dir/$csvFile");
+$transactionHistory = (new MobillsAppReader())->buildTransactionHistory("$dir/$csvFile");
 
 if (!$xlsxFile) {
     echo "No XLSX file found.\n";
@@ -37,4 +39,9 @@ if (!$xlsxFile) {
 
 $toptalTransactionHistory = (new ToptalReader())->buildTransactionHistory("$dir/$xlsxFile");
 
-echo number_format($toptalTransactionHistory->calculateTotalAmount(), 2) . "\n";
+$transactionHistory->appendTransactionHistory($toptalTransactionHistory);
+
+$currencyConverter = new CurrencyConverter('GBP');
+$transactionTotalCalculator = new TransactionTotalCalculator($currencyConverter);
+
+echo number_format($transactionTotalCalculator->calculateTotalAmount($transactionHistory), 2) . "\n";

@@ -16,12 +16,15 @@ class TransactionHistory
         $this->transactions = $transactions;
     }
 
-    public function calculateTotalAmount(): float
+    public function getTransactions()
     {
-        $amount = 0.0;
-        foreach ($this->transactions as $transaction) {
-            $amount += $transaction->getAmount();
+        return $this->transactions;
+    }
+
+    public function appendTransactionHistory(self $transactionHistory): void
+    {
+        foreach ($transactionHistory->getTransactions() as $transaction) {
+            $this->transactions[] = $transaction;
         }
-        return $amount;
     }
 }

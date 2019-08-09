@@ -19,14 +19,21 @@ class MobillsAppReader
         $reader->setDelimiter(';');
         CharsetConverter::addTo($reader, 'utf-16le', 'utf-8');
         $transactions = [];
-        $transactions[] = new Transaction((double) $_ENV['MOBILLSAPP_STARTING_AMOUNT'],
-            new DateTimeImmutable('2016-06-01 00:00:00'));
+        $transactions[] = new Transaction(
+            (double) $_ENV['MOBILLSAPP_STARTING_AMOUNT'],
+            'GBP',
+            new DateTimeImmutable('2016-06-01 00:00:00')
+        );
         foreach ($reader->getRecords() as $row) {
             $rowAmount = (float) str_replace(',', '.', $row['Valor']);
             if (!$rowAmount) {
                 throw new RuntimeException('Row amount is 0');
             }
-            $transactions[] = new Transaction($rowAmount, DateTimeImmutable::createFromFormat('d/m/Y', $row['Fecha']));
+            $transactions[] = new Transaction(
+                $rowAmount,
+                'GBP',
+                DateTimeImmutable::createFromFormat('d/m/Y', $row['Fecha'])
+            );
         }
 
         return new TransactionHistory($transactions);
