@@ -26,8 +26,14 @@ class TransactionStatisticsCalculator
         return $amount;
     }
 
-    public function calculateAmountsPerMonth(TransactionHistory $transactionHistory): array
+    /**
+     * @param TransactionHistory $transactionHistory
+     * @return array|TransactionAggregation[]
+     * @throws \Exception
+     */
+    public function aggregateByMonth(TransactionHistory $transactionHistory): array
     {
+        $currency = $this->currencyConverter->getCurrency();
         $transactions = $transactionHistory->getTransactions();
         if (!$transactions) {
             return [];
@@ -42,14 +48,22 @@ class TransactionStatisticsCalculator
         ); $date < $now; $date = $nextMonth) {
             $nextMonth = $date->addMonth();
             $monthAmount = 0.0;
+            $monthSpend = 0.0;
+            $monthIncome = 0.0;
             while ($transactionsIterator->valid() && $transactionsIterator->current()->getDateTime() < $nextMonth) {
-                $monthAmount += $this->currencyConverter->convertAmount(
+                $amount = $this->currencyConverter->convertAmount(
                     $transactionsIterator->current()->getAmount(),
                     $transactionsIterator->current()->getCurrency()
                 );
+                $monthAmount += $amount;
+                if ($amount > 0) {
+                    $monthIncome += $amount;
+                } else {
+                    $monthSpend += -$amount;
+                }
                 $transactionsIterator->next();
             }
-            $amountsPerMonth[$date->format('Y-m')] = $monthAmount;
+            $amountsPerMonth[$date->format('Y-m')] = new TransactionAggregation($currency, $monthIncome, $monthSpend);
         }
         return $amountsPerMonth;
     }

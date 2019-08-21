@@ -7,6 +7,9 @@ use amcsi\BankStatementMerger\Transaction\CurrencyConverter;
 use amcsi\BankStatementMerger\Transaction\CurrencyFormatter;
 use amcsi\BankStatementMerger\Transaction\TransactionStatisticsCalculator;
 use Carbon\CarbonImmutable;
+use Symfony\Component\Console\Helper\Table;
+use Symfony\Component\Console\Helper\TableStyle;
+use Symfony\Component\Console\Output\ConsoleOutput;
 
 require_once __DIR__ . '/vendor/autoload.php';
 
@@ -47,22 +50,32 @@ $currency = 'GBP';
 $currencyConverter = new CurrencyConverter($currency);
 $transactionTotalCalculator = new TransactionStatisticsCalculator($currencyConverter);
 
-$amountsPerMonth = $transactionTotalCalculator->calculateAmountsPerMonth($transactionHistory);
+$monthlyAggregation = $transactionTotalCalculator->aggregateByMonth($transactionHistory);
 
 echo CurrencyFormatter::format(
         $transactionTotalCalculator->calculateTotalAmount($transactionHistory),
         $currency
     ) . "\n";
 
-$totalAmountByEndOfMonth = 0.0;
-foreach ($amountsPerMonth as $dateKey => $amount) {
-    $totalAmountByEndOfMonth += $amount;
-    printf(
-        "%s: %s (%s %+9s %s)\n",
+$table = new Table(new ConsoleOutput());
+$table->setStyle((new TableStyle())->setPadType(STR_PAD_LEFT));
+$table->setHeaders(['Month', 'Balance', 'Difference', 'Income', 'Spend']);
+
+$balance = 0.0;
+foreach ($monthlyAggregation as $dateKey => $aggregate) {
+    $total = $aggregate->getTotal();
+    $balance += $total;
+    $totalIncome = $aggregate->getIncome();
+    $totalSpend = $aggregate->getSpend();
+    $table->addRow(
+        [
         CarbonImmutable::createFromFormat('Y-m', $dateKey)->format('Y M'),
-        CurrencyFormatter::format($totalAmountByEndOfMonth, $currency),
-        ($amount < 0 ? '-' : '+'),
-        number_format(abs($amount), 2),
-        $currency
+            CurrencyFormatter::format($balance, $currency),
+            sprintf("%s % 9s %s", $total < 0 ? '-' : '+', number_format(abs($total), 2), $currency),
+            CurrencyFormatter::format($totalIncome, $currency),
+            CurrencyFormatter::format($totalSpend, $currency),
+        ]
     );
 }
+
+$table->render();

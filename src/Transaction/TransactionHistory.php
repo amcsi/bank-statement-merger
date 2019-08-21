@@ -5,6 +5,9 @@ namespace amcsi\BankStatementMerger\Transaction;
 
 class TransactionHistory
 {
+    /**
+     * @var Transaction[]|array $transactions
+     */
     private $transactions;
 
     /**

@@ -21,7 +21,7 @@ class Transaction
         return $this->amount;
     }
 
-    public function getCurrency()
+    public function getCurrency(): string
     {
         return $this->currency;
     }
