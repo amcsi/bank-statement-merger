@@ -4,24 +4,27 @@ declare(strict_types=1);
 namespace amcsi\BankStatementMerger\Transaction;
 
 use Carbon\CarbonImmutable;
+use Money\Converter;
+use Money\Currency;
+use Money\Money;
 
 class TransactionStatisticsCalculator
 {
-    private $currencyConverter;
+    private $converter;
+    private $currency;
 
-    public function __construct(CurrencyConverter $currencyConverter)
+    public function __construct(Converter $converter, Currency $currency)
     {
-        $this->currencyConverter = $currencyConverter;
+        $this->converter = $converter;
+        $this->currency = $currency;
     }
 
-    public function calculateTotalAmount(TransactionHistory $transactionHistory): float
+    public function calculateTotalAmount(TransactionHistory $transactionHistory): Money
     {
-        $amount = 0.0;
+        $amount = new Money(0, $this->currency);
 
         foreach ($transactionHistory->getTransactions() as $transaction) {
-            $rowCurrency = $transaction->getCurrency();
-            $rowAmount = $transaction->getAmount();
-            $amount += $this->currencyConverter->convertAmount($rowAmount, $rowCurrency);
+            $amount = $amount->add($this->converter->convert($transaction->getMoney(), $this->currency));
         }
         return $amount;
     }
@@ -33,7 +36,7 @@ class TransactionStatisticsCalculator
      */
     public function aggregateByMonth(TransactionHistory $transactionHistory): array
     {
-        $currency = $this->currencyConverter->getCurrency();
+        $currency = $this->currency->getCode();
         $transactions = $transactionHistory->getTransactions();
         if (!$transactions) {
             return [];
@@ -50,11 +53,10 @@ class TransactionStatisticsCalculator
             $monthAmount = 0.0;
             $monthSpend = 0.0;
             $monthIncome = 0.0;
-            while ($transactionsIterator->valid() && $transactionsIterator->current()->getDateTime() < $nextMonth) {
-                $amount = $this->currencyConverter->convertAmount(
-                    $transactionsIterator->current()->getAmount(),
-                    $transactionsIterator->current()->getCurrency()
-                );
+            while ($transactionsIterator->valid() && ($current = $transactionsIterator->current(
+                )) && $current->getDateTime() < $nextMonth) {
+                $money = $this->converter->convert($current->getMoney(), $this->currency);
+                $amount = ((int) $money->getAmount()) / 100;
                 $monthAmount += $amount;
                 if ($amount > 0) {
                     $monthIncome += $amount;

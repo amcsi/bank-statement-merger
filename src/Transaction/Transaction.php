@@ -3,27 +3,25 @@ declare(strict_types=1);
 
 namespace amcsi\BankStatementMerger\Transaction;
 
+use Money\Money;
+
 class Transaction
 {
-    private $amount;
-    private $currency;
+    private $money;
     private $dateTime;
 
-    public function __construct(float $amount, string $currency, \DateTimeInterface $dateTime)
+    public function __construct(Money $money, \DateTimeInterface $dateTime)
     {
-        $this->amount = $amount;
-        $this->currency = $currency;
+        $this->money = $money;
         $this->dateTime = $dateTime;
     }
 
-    public function getAmount(): float
+    /**
+     * @return Money
+     */
+    public function getMoney(): Money
     {
-        return $this->amount;
-    }
-
-    public function getCurrency(): string
-    {
-        return $this->currency;
+        return $this->money;
     }
 
     public function getDateTime(): \DateTimeInterface

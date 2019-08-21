@@ -3,10 +3,18 @@ declare(strict_types=1);
 
 use amcsi\BankStatementMerger\Readers\MobillsAppReader;
 use amcsi\BankStatementMerger\Readers\ToptalReader;
-use amcsi\BankStatementMerger\Transaction\CurrencyConverter;
 use amcsi\BankStatementMerger\Transaction\CurrencyFormatter;
+use amcsi\BankStatementMerger\Transaction\Exchange\ExchangeRatesApi;
 use amcsi\BankStatementMerger\Transaction\TransactionStatisticsCalculator;
 use Carbon\CarbonImmutable;
+use Exchanger\Exchanger;
+use Money\Converter;
+use Money\Currencies\ISOCurrencies;
+use Money\Currency;
+use Money\Parser\DecimalMoneyParser;
+use Swap\Swap;
+use Symfony\Component\Cache\Adapter\FilesystemAdapter;
+use Symfony\Component\Cache\Psr16Cache;
 use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Helper\TableStyle;
 use Symfony\Component\Console\Output\ConsoleOutput;
@@ -35,27 +43,36 @@ if (!$csvFile) {
     exit(1);
 }
 
-$transactionHistory = (new MobillsAppReader())->buildTransactionHistory("$dir/$csvFile");
+$currencies = new ISOCurrencies();
+$parser = new DecimalMoneyParser($currencies);
+$exchange = new Money\Exchange\SwapExchange(
+    new Swap(
+        new Exchanger(
+            new ExchangeRatesApi(),
+            new Psr16Cache(new FilesystemAdapter('', 1440, __DIR__ . '/storage/framework/cache/currencyExchange'))
+        )
+    )
+);
+$converter = new Converter($currencies, $exchange);
+$formatter = new Money\Formatter\DecimalMoneyFormatter($currencies);
+
+$transactionHistory = (new MobillsAppReader($parser))->buildTransactionHistory("$dir/$csvFile");
 
 if (!$xlsxFile) {
     echo "No XLSX file found.\n";
     exit(1);
 }
 
-$toptalTransactionHistory = (new ToptalReader())->buildTransactionHistory("$dir/$xlsxFile");
+$toptalTransactionHistory = (new ToptalReader($parser))->buildTransactionHistory("$dir/$xlsxFile");
 
 $transactionHistory->appendTransactionHistory($toptalTransactionHistory);
 
 $currency = 'GBP';
-$currencyConverter = new CurrencyConverter($currency);
-$transactionTotalCalculator = new TransactionStatisticsCalculator($currencyConverter);
+$transactionTotalCalculator = new TransactionStatisticsCalculator($converter, new Currency('GBP'));
 
 $monthlyAggregation = $transactionTotalCalculator->aggregateByMonth($transactionHistory);
 
-echo CurrencyFormatter::format(
-        $transactionTotalCalculator->calculateTotalAmount($transactionHistory),
-        $currency
-    ) . "\n";
+echo $formatter->format($transactionTotalCalculator->calculateTotalAmount($transactionHistory)) . "\n";
 
 $table = new Table(new ConsoleOutput());
 $table->setStyle((new TableStyle())->setPadType(STR_PAD_LEFT));

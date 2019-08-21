@@ -8,10 +8,19 @@ use amcsi\BankStatementMerger\Transaction\TransactionHistory;
 use DateTimeImmutable;
 use League\Csv\CharsetConverter;
 use League\Csv\Reader;
+use Money\Currency;
+use Money\MoneyParser;
 use RuntimeException;
 
 class MobillsAppReader
 {
+    private $parser;
+
+    public function __construct(MoneyParser $parser)
+    {
+        $this->parser = $parser;
+    }
+
     public function buildTransactionHistory(string $filename)
     {
         $reader = Reader::createFromPath($filename);
@@ -19,19 +28,18 @@ class MobillsAppReader
         $reader->setDelimiter(';');
         CharsetConverter::addTo($reader, 'utf-16le', 'utf-8');
         $transactions = [];
+        $currency = new Currency('GBP');
         $transactions[] = new Transaction(
-            (double) $_ENV['MOBILLSAPP_STARTING_AMOUNT'],
-            'GBP',
+            $this->parser->parse($_ENV['MOBILLSAPP_STARTING_AMOUNT'], $currency),
             new DateTimeImmutable('2016-06-01 00:00:00')
         );
         foreach ($reader->getRecords() as $row) {
-            $rowAmount = (float) str_replace(',', '.', $row['Valor']);
+            $rowAmount = str_replace(',', '.', $row['Valor']);
             if (!$rowAmount) {
                 throw new RuntimeException('Row amount is 0');
             }
             $transactions[] = new Transaction(
-                $rowAmount,
-                'GBP',
+                $this->parser->parse($rowAmount, $currency),
                 DateTimeImmutable::createFromFormat('d/m/Y', $row['Fecha'])
             );
         }
