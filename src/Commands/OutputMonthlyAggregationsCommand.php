@@ -3,7 +3,11 @@ declare(strict_types=1);
 
 namespace amcsi\BankStatementMerger\Commands;
 
+use amcsi\BankStatementMerger\Readers\MobillsAppReader;
+use amcsi\BankStatementMerger\Readers\RevolutReader;
 use amcsi\BankStatementMerger\Transaction\CurrencyFormatter;
+use amcsi\BankStatementMerger\Transaction\Transaction;
+use amcsi\BankStatementMerger\Transaction\TransactionHistory;
 use amcsi\BankStatementMerger\Transaction\TransactionReader;
 use amcsi\BankStatementMerger\Transaction\TransactionStatisticsCalculator;
 use Carbon\CarbonImmutable;
@@ -36,6 +40,8 @@ class OutputMonthlyAggregationsCommand extends Command
     {
         $transactionHistory = $this->transactionReader->readTransactions();
 
+        $transactionHistory = self::removeTransfersBetweenAccounts($transactionHistory);
+
         $currency = 'GBP';
         $transactionTotalCalculator = new TransactionStatisticsCalculator($this->converter, new Currency('GBP'));
 
@@ -65,5 +71,58 @@ class OutputMonthlyAggregationsCommand extends Command
         }
 
         $table->render();
+    }
+
+    private static function removeTransfersBetweenAccounts(TransactionHistory $transactionHistory)
+    {
+        $transactions = $transactionHistory->getTransactions();
+        $newTransactions = [];
+        /** @var Transaction[] $potentialTransferTransactions */
+        $potentialTransferTransactions = [];
+
+        foreach ($transactions as $index => $transaction) {
+            $money = $transaction->getMoney();
+            if (!(
+                ($transaction->getSource() === RevolutReader::SOURCE && $money->isPositive())
+                || ($transaction->getSource() === MobillsAppReader::SOURCE && $money->isNegative()))
+            ) {
+                $newTransactions[] = $transaction;
+                continue;
+            }
+
+            $potentialTransferTransactions[] = $transaction;
+        }
+
+        /*  Let's iterate the list of transactions that have the potential to be transfer transactions.
+            We iterate the list to find any income on Revolut. Then, we look ahead to see if there's a matching
+            spend transaction in MobillsApp that's at most 4 days apart. If we find one, then the two transactions
+            cancel each other out, and are left out of the final list. */
+
+        while ($transaction = array_shift($potentialTransferTransactions)) {
+            /** @var Transaction $transaction */
+            $money = $transaction->getMoney();
+            if ($transaction->getSource() === RevolutReader::SOURCE && $money->isPositive()) {
+                $date = $transaction->getDateTime();
+                $lastFoundMatchingIndex = null;
+                for ($i = 0; $i < count(
+                    $potentialTransferTransactions
+                ) && $potentialTransferTransactions[$i]->getDateTime()->diff($date)->days <= 4; $i++) {
+                    $lookaheadTransaction = $potentialTransferTransactions[$i];
+                    $lookaheadMoney = $lookaheadTransaction->getMoney();
+                    if ($lookaheadTransaction->getSource() === MobillsAppReader::SOURCE && $lookaheadMoney->isNegative(
+                        ) && $lookaheadMoney->negative()->equals($money)) {
+                        $lastFoundMatchingIndex = $i;
+                    }
+                }
+                if ($lastFoundMatchingIndex !== null) {
+                    array_splice($potentialTransferTransactions, $lastFoundMatchingIndex, 1);
+                    continue;
+                }
+            }
+
+            $newTransactions[] = $transaction;
+        }
+
+        return new TransactionHistory($newTransactions);
     }
 }
