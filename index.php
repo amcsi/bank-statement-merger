@@ -9,7 +9,7 @@ use Exchanger\Exchanger;
 use Money\Converter;
 use Money\Currencies\ISOCurrencies;
 use Money\Exchange\SwapExchange;
-use Money\Formatter\IntlLocalizedDecimalFormatter;
+use Money\Formatter\IntlMoneyFormatter;
 use Money\Parser\DecimalMoneyParser;
 use Money\Parser\IntlLocalizedDecimalParser;
 use Swap\Swap;
@@ -25,6 +25,7 @@ $dotenv->load();
 $currencies = new ISOCurrencies();
 $parser = new DecimalMoneyParser($currencies);
 $numberFormatter = new NumberFormatter('en_US', NumberFormatter::DEFAULT_STYLE);
+$moneyFormatter = new NumberFormatter('en_US', NumberFormatter::CURRENCY);
 $thousandsSeparatorParser = new IntlLocalizedDecimalParser($numberFormatter, $currencies);
 $exchange = new SwapExchange(
     new Swap(
@@ -35,7 +36,7 @@ $exchange = new SwapExchange(
     )
 );
 $converter = new Converter($currencies, $exchange);
-$formatter = new IntlLocalizedDecimalFormatter($numberFormatter, $currencies);
+$formatter = new IntlMoneyFormatter($moneyFormatter, $currencies);
 $transactionReader = new TransactionReader($parser, $thousandsSeparatorParser);
 
 $application = new Application();
