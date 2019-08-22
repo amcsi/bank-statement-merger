@@ -37,7 +37,11 @@ $exchange = new SwapExchange(
 );
 $converter = new Converter($currencies, $exchange);
 $formatter = new IntlMoneyFormatter($moneyFormatter, $currencies);
-$transactionReader = new TransactionReader($parser, $thousandsSeparatorParser);
+$transactionReader = new TransactionReader(
+    $parser,
+    $thousandsSeparatorParser,
+    new FilesystemAdapter('transactions', 60 * 60 * 24, __DIR__ . '/storage/framework/cache/transactions')
+);
 
 $application = new Application();
 $application->add(new OutputMonthlyAggregationsCommand($transactionReader, $converter, $formatter));
