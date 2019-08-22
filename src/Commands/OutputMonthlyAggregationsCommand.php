@@ -5,8 +5,8 @@ namespace amcsi\BankStatementMerger\Commands;
 
 use amcsi\BankStatementMerger\Readers\MobillsAppReader;
 use amcsi\BankStatementMerger\Readers\RevolutReader;
-use amcsi\BankStatementMerger\Transaction\CurrencyFormatter;
 use amcsi\BankStatementMerger\Transaction\Transaction;
+use amcsi\BankStatementMerger\Transaction\TransactionAggregation;
 use amcsi\BankStatementMerger\Transaction\TransactionHistory;
 use amcsi\BankStatementMerger\Transaction\TransactionReader;
 use amcsi\BankStatementMerger\Transaction\TransactionStatisticsCalculator;
@@ -43,8 +43,8 @@ class OutputMonthlyAggregationsCommand extends Command
 
         $transactionHistory = self::removeTransfersBetweenAccounts($transactionHistory);
 
-        $currency = 'GBP';
-        $transactionTotalCalculator = new TransactionStatisticsCalculator($this->converter, new Currency('GBP'));
+        $currency = new Currency('GBP');
+        $transactionTotalCalculator = new TransactionStatisticsCalculator($this->converter, $currency);
 
         $monthlyAggregation = $transactionTotalCalculator->aggregateByMonth($transactionHistory);
 
@@ -54,19 +54,20 @@ class OutputMonthlyAggregationsCommand extends Command
         $table->setStyle((new TableStyle())->setPadType(STR_PAD_LEFT));
         $table->setHeaders(['Month', 'Balance', 'Difference', 'Income', 'Spend']);
 
-        $balance = 0.0;
+        $balance = reset($monthlyAggregation)->getTotal();
         foreach (drop(1, $monthlyAggregation) as $dateKey => $aggregate) {
+            /** @var TransactionAggregation $aggregate */
             $total = $aggregate->getTotal();
-            $balance += $total;
+            $balance = $balance->add($total);
             $totalIncome = $aggregate->getIncome();
             $totalSpend = $aggregate->getSpend();
             $table->addRow(
                 [
                     CarbonImmutable::createFromFormat('Y-m', $dateKey)->format('Y M'),
-                    CurrencyFormatter::format($balance, $currency),
-                    sprintf("%s % 8s %s", $total < 0 ? '-' : '+', number_format(abs($total), 2), $currency),
-                    CurrencyFormatter::format($totalIncome, $currency),
-                    CurrencyFormatter::format($totalSpend, $currency),
+                    $this->formatter->format($balance),
+                    ($total->isPositive() ? '+' : '') . $this->formatter->format($total),
+                    $this->formatter->format($totalIncome),
+                    $this->formatter->format($totalSpend),
                 ]
             );
         }

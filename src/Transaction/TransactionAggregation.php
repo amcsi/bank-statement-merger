@@ -3,45 +3,31 @@ declare(strict_types=1);
 
 namespace amcsi\BankStatementMerger\Transaction;
 
+use Money\Money;
+
 class TransactionAggregation
 {
-    private $currency;
     private $income;
     private $spend;
 
-    public function __construct(string $currency, float $income, float $spend)
+    public function __construct(Money $income, Money $spend)
     {
-        $this->currency = $currency;
         $this->income = $income;
         $this->spend = $spend;
     }
 
-    /**
-     * @return string
-     */
-    public function getCurrency(): string
-    {
-        return $this->currency;
-    }
-
-    /**
-     * @return float
-     */
-    public function getSpend(): float
+    public function getSpend(): Money
     {
         return $this->spend;
     }
 
-    /**
-     * @return float
-     */
-    public function getIncome(): float
+    public function getIncome(): Money
     {
         return $this->income;
     }
 
     public function getTotal()
     {
-        return $this->income - $this->spend;
+        return $this->income->subtract($this->spend);
     }
 }

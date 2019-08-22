@@ -36,7 +36,7 @@ class TransactionStatisticsCalculator
      */
     public function aggregateByMonth(TransactionHistory $transactionHistory): array
     {
-        $currency = $this->currency->getCode();
+        $currency = $this->currency;
         $transactions = $transactionHistory->getTransactions();
         if (!$transactions) {
             return [];
@@ -50,14 +50,12 @@ class TransactionStatisticsCalculator
         for ($date = CarbonImmutable::instance($transactions[0]->getDateTime())->startOfMonth(
         ); $date < $now; $date = $nextMonth) {
             $nextMonth = $date->addMonth();
-            $monthAmount = 0.0;
-            $monthSpend = 0.0;
-            $monthIncome = 0.0;
+            $monthSpend = 0;
+            $monthIncome = 0;
             while ($transactionsIterator->valid() && ($current = $transactionsIterator->current(
                 )) && $current->getDateTime() < $nextMonth) {
                 $money = $this->converter->convert($current->getMoney(), $this->currency);
-                $amount = ((int) $money->getAmount()) / 100;
-                $monthAmount += $amount;
+                $amount = (int) $money->getAmount();
                 if ($amount > 0) {
                     $monthIncome += $amount;
                 } else {
@@ -65,7 +63,10 @@ class TransactionStatisticsCalculator
                 }
                 $transactionsIterator->next();
             }
-            $amountsPerMonth[$date->format('Y-m')] = new TransactionAggregation($currency, $monthIncome, $monthSpend);
+            $amountsPerMonth[$date->format('Y-m')] = new TransactionAggregation(
+                new Money($monthIncome, $currency),
+                new Money($monthSpend, $currency)
+            );
         }
         return $amountsPerMonth;
     }
