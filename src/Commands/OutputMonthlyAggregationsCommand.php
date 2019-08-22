@@ -20,6 +20,7 @@ use Symfony\Component\Console\Helper\TableStyle;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\ConsoleOutput;
 use Symfony\Component\Console\Output\OutputInterface;
+use function iter\drop;
 
 class OutputMonthlyAggregationsCommand extends Command
 {
@@ -54,7 +55,7 @@ class OutputMonthlyAggregationsCommand extends Command
         $table->setHeaders(['Month', 'Balance', 'Difference', 'Income', 'Spend']);
 
         $balance = 0.0;
-        foreach ($monthlyAggregation as $dateKey => $aggregate) {
+        foreach (drop(1, $monthlyAggregation) as $dateKey => $aggregate) {
             $total = $aggregate->getTotal();
             $balance += $total;
             $totalIncome = $aggregate->getIncome();
@@ -63,7 +64,7 @@ class OutputMonthlyAggregationsCommand extends Command
                 [
                     CarbonImmutable::createFromFormat('Y-m', $dateKey)->format('Y M'),
                     CurrencyFormatter::format($balance, $currency),
-                    sprintf("%s % 9s %s", $total < 0 ? '-' : '+', number_format(abs($total), 2), $currency),
+                    sprintf("%s % 8s %s", $total < 0 ? '-' : '+', number_format(abs($total), 2), $currency),
                     CurrencyFormatter::format($totalIncome, $currency),
                     CurrencyFormatter::format($totalSpend, $currency),
                 ]
