@@ -14,6 +14,8 @@ use RuntimeException;
 
 class MobillsAppReader
 {
+    public const SOURCE = 'MobillsApp';
+
     private $parser;
 
     public function __construct(MoneyParser $parser)
@@ -31,7 +33,8 @@ class MobillsAppReader
         $currency = new Currency('GBP');
         $transactions[] = new Transaction(
             $this->parser->parse($_ENV['MOBILLSAPP_STARTING_AMOUNT'], $currency),
-            new DateTimeImmutable('2016-06-01 00:00:00')
+            new DateTimeImmutable('2016-06-01 00:00:00'),
+            self::SOURCE
         );
         foreach ($reader->getRecords() as $row) {
             $rowAmount = str_replace(',', '.', $row['Valor']);
@@ -40,7 +43,8 @@ class MobillsAppReader
             }
             $transactions[] = new Transaction(
                 $this->parser->parse($rowAmount, $currency),
-                DateTimeImmutable::createFromFormat('d/m/Y H:i:s', $row['Fecha'] . ' 00:00:00')
+                DateTimeImmutable::createFromFormat('d/m/Y H:i:s', $row['Fecha'] . ' 00:00:00'),
+                self::SOURCE
             );
         }
 

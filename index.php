@@ -2,13 +2,14 @@
 declare(strict_types=1);
 
 use amcsi\BankStatementMerger\Commands\OutputMonthlyAggregationsCommand;
+use amcsi\BankStatementMerger\Commands\OutputTransactionsCommand;
 use amcsi\BankStatementMerger\Transaction\Exchange\ExchangeRatesApi;
 use amcsi\BankStatementMerger\Transaction\TransactionReader;
 use Exchanger\Exchanger;
 use Money\Converter;
 use Money\Currencies\ISOCurrencies;
 use Money\Exchange\SwapExchange;
-use Money\Formatter\DecimalMoneyFormatter;
+use Money\Formatter\IntlLocalizedDecimalFormatter;
 use Money\Parser\DecimalMoneyParser;
 use Money\Parser\IntlLocalizedDecimalParser;
 use Swap\Swap;
@@ -23,7 +24,8 @@ $dotenv->load();
 
 $currencies = new ISOCurrencies();
 $parser = new DecimalMoneyParser($currencies);
-$thousandsSeparatorParser = new IntlLocalizedDecimalParser(new NumberFormatter('en_US', NumberFormatter::DEFAULT_STYLE), $currencies);
+$numberFormatter = new NumberFormatter('en_US', NumberFormatter::DEFAULT_STYLE);
+$thousandsSeparatorParser = new IntlLocalizedDecimalParser($numberFormatter, $currencies);
 $exchange = new SwapExchange(
     new Swap(
         new Exchanger(
@@ -33,11 +35,12 @@ $exchange = new SwapExchange(
     )
 );
 $converter = new Converter($currencies, $exchange);
-$formatter = new DecimalMoneyFormatter($currencies);
+$formatter = new IntlLocalizedDecimalFormatter($numberFormatter, $currencies);
 $transactionReader = new TransactionReader($parser, $thousandsSeparatorParser);
 
 $application = new Application();
 $application->add(new OutputMonthlyAggregationsCommand($transactionReader, $converter, $formatter));
+$application->add(new OutputTransactionsCommand($transactionReader, $formatter));
 $application->setDefaultCommand(OutputMonthlyAggregationsCommand::NAME);
 
 $application->run();

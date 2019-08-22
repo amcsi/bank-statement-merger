@@ -12,6 +12,8 @@ use PhpOffice\PhpSpreadsheet\Shared\Date;
 
 class ToptalReader
 {
+    public const SOURCE = 'Toptal';
+
     private $parser;
 
     public function __construct(MoneyParser $parser)
@@ -37,7 +39,7 @@ class ToptalReader
             $cellIterator->seek('D');
             $date = Date::excelToDateTimeObject($cellIterator->current()->getValue());
 
-            $transactions[] = new Transaction($this->parser->parse($rowAmount, $currency), $date);
+            $transactions[] = new Transaction($this->parser->parse($rowAmount, $currency), $date, self::SOURCE);
         }
 
         return new TransactionHistory($transactions);

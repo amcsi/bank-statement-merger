@@ -9,11 +9,13 @@ class Transaction
 {
     private $money;
     private $dateTime;
+    private $source;
 
-    public function __construct(Money $money, \DateTimeInterface $dateTime)
+    public function __construct(Money $money, \DateTimeInterface $dateTime, string $source)
     {
         $this->money = $money;
         $this->dateTime = $dateTime;
+        $this->source = $source;
     }
 
     /**
@@ -27,5 +29,10 @@ class Transaction
     public function getDateTime(): \DateTimeInterface
     {
         return $this->dateTime;
+    }
+
+    public function getSource(): string
+    {
+        return $this->source;
     }
 }

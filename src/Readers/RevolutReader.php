@@ -12,6 +12,7 @@ use Money\MoneyParser;
 
 class RevolutReader
 {
+    public const SOURCE = 'Revolut';
     private const SPANISH_MONTH_MAP = [
         'ene' => 1,
         'feb' => 2,
@@ -48,7 +49,7 @@ class RevolutReader
             $spend = trim($row[2]);
             $income = trim($row[3]);
             $rowAmount = $spend ? "-{$spend}" : $income;
-            $transactions[] = new Transaction($this->parser->parse($rowAmount, $currency), self::parseDate($row[0]));
+            $transactions[] = new Transaction($this->parser->parse($rowAmount, $currency), self::parseDate($row[0]), self::SOURCE);
         }
 
         return new TransactionHistory($transactions);
