@@ -40,7 +40,7 @@ class MobillsAppReader
             }
             $transactions[] = new Transaction(
                 $this->parser->parse($rowAmount, $currency),
-                DateTimeImmutable::createFromFormat('d/m/Y', $row['Fecha'])
+                DateTimeImmutable::createFromFormat('d/m/Y H:i:s', $row['Fecha'] . ' 00:00:00')
             );
         }
 

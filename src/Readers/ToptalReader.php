@@ -18,6 +18,7 @@ class ToptalReader
     {
         $this->parser = $parser;
     }
+
     public function buildTransactionHistory(string $filename)
     {
         $spreadsheet = IOFactory::load($filename);
