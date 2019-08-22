@@ -18,7 +18,6 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Helper\TableStyle;
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Output\ConsoleOutput;
 use Symfony\Component\Console\Output\OutputInterface;
 use function iter\drop;
 
@@ -50,7 +49,7 @@ class OutputMonthlyAggregationsCommand extends Command
 
         echo $this->formatter->format($transactionTotalCalculator->calculateTotalAmount($transactionHistory)) . "\n";
 
-        $table = new Table(new ConsoleOutput());
+        $table = new Table($output);
         $table->setStyle((new TableStyle())->setPadType(STR_PAD_LEFT));
         $table->setHeaders(['Month', 'Balance', 'Difference', 'Income', 'Spend']);
 
@@ -61,11 +60,12 @@ class OutputMonthlyAggregationsCommand extends Command
             $balance = $balance->add($total);
             $totalIncome = $aggregate->getIncome();
             $totalSpend = $aggregate->getSpend();
+            $color = $total->isPositive() ? 'green' : 'red';
             $table->addRow(
                 [
                     CarbonImmutable::createFromFormat('Y-m', $dateKey)->format('Y M'),
                     $this->formatter->format($balance),
-                    ($total->isPositive() ? '+' : '') . $this->formatter->format($total),
+                    sprintf("<fg=$color>%s%s</>", $total->isPositive() ? '+' : '', $this->formatter->format($total)),
                     $this->formatter->format($totalIncome),
                     $this->formatter->format($totalSpend),
                 ]
