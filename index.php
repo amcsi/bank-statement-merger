@@ -25,7 +25,7 @@ $dotenv->load();
 $currencies = new ISOCurrencies();
 $parser = new DecimalMoneyParser($currencies);
 $numberFormatter = new NumberFormatter('en_US', NumberFormatter::DEFAULT_STYLE);
-$moneyFormatter = new NumberFormatter('en_US', NumberFormatter::CURRENCY);
+$moneyFormatter = new NumberFormatter('hu_HU', NumberFormatter::CURRENCY);
 $thousandsSeparatorParser = new IntlLocalizedDecimalParser($numberFormatter, $currencies);
 $exchange = new SwapExchange(
     new Swap(
