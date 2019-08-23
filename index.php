@@ -46,6 +46,5 @@ $transactionReader = new TransactionReader(
 $application = new Application();
 $application->add(new OutputMonthlyAggregationsCommand($transactionReader, $converter, $formatter));
 $application->add(new OutputTransactionsCommand($transactionReader, $formatter));
-$application->setDefaultCommand(OutputMonthlyAggregationsCommand::NAME);
 
 $application->run();
