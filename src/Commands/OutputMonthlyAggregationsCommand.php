@@ -40,6 +40,7 @@ class OutputMonthlyAggregationsCommand extends Command
     protected function configure()
     {
         parent::configure();
+        $this->setDescription('Outputs aggregations of income, spend and balance per month.');
         $this->addOption('currency', 'c', InputArgument::OPTIONAL, 'Currency to display results in', 'GBP');
     }
 

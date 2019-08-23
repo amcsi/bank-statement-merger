@@ -25,6 +25,12 @@ class OutputTransactionsCommand extends Command
         $this->formatter = $formatter;
     }
 
+    protected function configure()
+    {
+        parent::configure();
+        $this->setDescription('Outputs merged transactions of different accounts in date order.');
+    }
+
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $transactionHistory = $this->transactionReader->readTransactions();
