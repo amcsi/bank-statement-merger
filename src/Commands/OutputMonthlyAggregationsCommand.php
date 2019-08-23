@@ -17,6 +17,7 @@ use Money\MoneyFormatter;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Helper\TableStyle;
+use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use function iter\drop;
@@ -36,13 +37,19 @@ class OutputMonthlyAggregationsCommand extends Command
         $this->formatter = $formatter;
     }
 
+    protected function configure()
+    {
+        parent::configure();
+        $this->addOption('currency', 'c', InputArgument::OPTIONAL, 'Currency to display results in', 'GBP');
+    }
+
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $transactionHistory = $this->transactionReader->readTransactions();
 
         $transactionHistory = self::removeTransfersBetweenAccounts($transactionHistory);
 
-        $currency = new Currency('GBP');
+        $currency = new Currency($input->getOption('currency'));
         $transactionTotalCalculator = new TransactionStatisticsCalculator($this->converter, $currency);
 
         $monthlyAggregation = $transactionTotalCalculator->aggregateByMonth($transactionHistory);
